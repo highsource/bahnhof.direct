@@ -24,4 +24,4 @@ Incorporates [stops data of DB Station&Service AG](http://data.deutschebahn.com/
 
 # License
 
-[MIT License](LICENSE)
+Code [MIT License](LICENSE), data [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) (please see [dataset info](http://data.deutschebahn.com/dataset/data-haltestellen)).
