@@ -1,27 +1,55 @@
-var options = {
-  enableHighAccuracy: true,
-  timeout: 5000,
-  maximumAge: 0
+var ajax = {};
+ajax.createXMLHttpRequest = function () {
+    if (typeof XMLHttpRequest !== 'undefined') {
+        return new XMLHttpRequest();
+    }
+    var versions = [
+        "MSXML2.XmlHttp.6.0",
+        "MSXML2.XmlHttp.5.0",
+        "MSXML2.XmlHttp.4.0",
+        "MSXML2.XmlHttp.3.0",
+        "MSXML2.XmlHttp.2.0",
+        "Microsoft.XmlHttp"
+    ];
+
+    var xhr;
+    for (var i = 0; i < versions.length; i++) {
+        try {
+            xhr = new ActiveXObject(versions[i]);
+            break;
+        } catch (e) {
+        }
+    }
+    return xhr;
 };
 
-function success(pos) {
-  var crd = pos.coords;
+ajax.request = function (url, method, data, onSuccess, onFailure){
+        var xhr = ajax.createXMLHttpRequest();
 
-  console.log('Your current position is:');
-  console.log('Latitude : ' + crd.latitude);
-  console.log('Longitude: ' + crd.longitude);
-  console.log('More or less ' + crd.accuracy + ' meters.');
+        xhr.onreadystatechange = function () {
+		if (xhr.readyState === 4 && xhr.status === 200){
+			onSuccess(JSON.parse(xhr.responseText));
+		} else if (xhr.readyState === 4) { // something went wrong but complete
+			onFailure();
+		}
+	};
+	xhr.open(method,url,true);
+	xhr.send();
 };
 
-function error(err) {
+function receiveCurrentPosition(pos) {
+	var crd = pos.coords;
+        ajax.request('http://bahnhofdirect.eu-central-1.elasticbeanstalk.com/haltestelle/' + crd.longitude + '/' + crd.latitude, 'GET', null, receiveHaltestelle, null);
+};
+
+function errorReceivingCurrentPosition(err) {
   console.warn('ERROR(' + err.code + '): ' + err.message);
 };
 
-navigator.geolocation.getCurrentPosition(success, error, options);
+function receiveHaltestelle(haltestelle)
+{
+	var url = 'https://iris.noncd.db.de/wbt/js/index.html?bhf=' + haltestelle.DS100;
+	window.location.replace(url);
+}
 
-$.ajax({
-  dataType: "json",
-  url: url,
-  data: data,
-  success: success
-});
+navigator.geolocation.getCurrentPosition(receiveCurrentPosition, errorReceivingCurrentPosition, { enableHighAccuracy: true, timeout: 5000, maximumAge: 60000});
