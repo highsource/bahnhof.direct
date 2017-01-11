@@ -14,7 +14,7 @@ public class CsvHaltestelleRepositoryTest {
 
 	@Test
 	public void findsAll() {
-		assertEquals(6598, haltestelleRepository.findAll().size());
+		assertEquals(6538, haltestelleRepository.findAll().size());
 	}
 
 	@Test
@@ -25,6 +25,11 @@ public class CsvHaltestelleRepositoryTest {
 	@Test
 	public void findsSeulbergByLonLat() {
 		assertEquals("Seulberg", haltestelleRepository.findByLaengeAndBreite(8.657660, 50.239804).getName());
+	}
+	
+	@Test
+	public void findsFrankfurtNiederradByLonLat() {
+		assertEquals("FNI", haltestelleRepository.findByLaengeAndBreite(8.637075, 50.081283).getDs100());
 	}
 
 	@Test

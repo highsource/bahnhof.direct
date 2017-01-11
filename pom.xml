@@ -23,6 +23,7 @@
 	<modules>
 		<module>core</module>
 		<module>api</module>
+		<module>dist</module>
 	</modules>
 	<profiles>
 		<profile>
@@ -48,6 +49,11 @@
 			<dependency>
 				<groupId>org.hisrc.bahnhofdirect</groupId>
 				<artifactId>bahnhofdirect-core</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.hisrc.bahnhofdirect</groupId>
+				<artifactId>bahnhofdirect-api</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 

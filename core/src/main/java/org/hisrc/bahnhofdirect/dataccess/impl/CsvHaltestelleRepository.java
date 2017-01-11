@@ -11,7 +11,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import org.hisrc.bahnhofdirect.dataccess.HaltestelleRepository;
+import org.hisrc.bahnhofdirect.dataccess.StationRepository;
 import org.hisrc.bahnhofdirect.model.Haltestelle;
+import org.hisrc.bahnhofdirect.model.Station;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,6 +31,7 @@ public class CsvHaltestelleRepository implements HaltestelleRepository {
 
 	private final Logger LOGGER = LoggerFactory.getLogger(CsvHaltestelleRepository.class);
 
+	private final StationRepository stationRepository = new XmlStationRepository();
 	private final String DEFAULT_RESOURCE_NAME = "D_Bahnhof_2016_01_alle.csv";
 	private final List<Haltestelle> haltestelles;
 	private final Map<Integer, Haltestelle> haltestellesByEvaNr;
@@ -58,7 +61,20 @@ public class CsvHaltestelleRepository implements HaltestelleRepository {
 				.readValues(new InputStreamReader(is, "UTF-8"));
 		while (haltestellesIterator.hasNext()) {
 			try {
-				haltestelles.add(haltestellesIterator.next());
+				final Haltestelle haltestelle = haltestellesIterator.next();
+				if (haltestelle.getDs100() != null && !haltestelle.getDs100().isEmpty()) {
+
+					if (stationRepository.knowsDs100(haltestelle.getDs100())) {
+						haltestelles.add(haltestelle);
+					} else {
+						final Station station = stationRepository.findByEvaNr(haltestelle.getEvaNr());
+						if (station != null) {
+							haltestelles.add(new Haltestelle(haltestelle.getEvaNr(), station.getDs100(),
+									haltestelle.getName(), haltestelle.getVerkehr(), haltestelle.getLaenge(),
+									haltestelle.getBreite(), null));
+						}
+					}
+				}
 			} catch (RuntimeException rex) {
 				LOGGER.warn("Could not read haltestelle from [{}].", haltestellesIterator.getCurrentLocation(), rex);
 			}
