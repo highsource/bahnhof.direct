@@ -39,16 +39,16 @@ ajax.request = function (url, method, data, onSuccess, onFailure){
 
 function receiveCurrentPosition(pos) {
 	var crd = pos.coords;
-        ajax.request('/haltestelle/' + crd.longitude + '/' + crd.latitude, 'GET', null, receiveHaltestelle, null);
+        ajax.request('/stop/' + crd.longitude + '/' + crd.latitude + "?agency=db", 'GET', null, receiveHaltestelle, null);
 };
 
 function errorReceivingCurrentPosition(err) {
   console.warn('ERROR(' + err.code + '): ' + err.message);
 };
 
-function receiveHaltestelle(haltestelle)
+function receiveHaltestelle(stop)
 {
-	var url = 'http://iris.noncd.db.de/wbt/js/index.html?typ=cd&bhf=' + haltestelle.DS100;
+	var url = 'https://iris.noncd.db.de/wbt/js/index.html?typ=cd&bhf=' + stop.stop_id;
 	window.location.replace(url);
 }
 
