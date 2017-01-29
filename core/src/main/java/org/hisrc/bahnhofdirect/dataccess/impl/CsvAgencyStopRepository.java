@@ -7,12 +7,14 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.hisrc.bahnhofdirect.dataccess.AgencyStopRepository;
 import org.hisrc.bahnhofdirect.dataccess.StopRepository;
 import org.hisrc.bahnhofdirect.model.Agency;
+import org.hisrc.bahnhofdirect.model.AgencyStopResults;
 import org.hisrc.bahnhofdirect.model.StopResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -82,7 +84,33 @@ public class CsvAgencyStopRepository implements AgencyStopRepository {
 			return null;
 		} else {
 			final StopRepository stopRepository = this.stopRepositoryByAgency.get(agency);
-			return stopRepository.findByLonLat(lon, lat);
+			return stopRepository.findNearestStopByLonLat(lon, lat);
 		}
+	}
+
+	public AgencyStopResults findNearestStopByAgencyIdAndLonLat(String agencyId, double lon, double lat, int maxCount,
+			double maxDistance) {
+		final Agency agency = findAgencyById(agencyId);
+		if (agency == null) {
+			return null;
+		} else {
+			final StopRepository stopRepository = this.stopRepositoryByAgency.get(agency);
+			List<StopResult> stopResults = stopRepository.findNearestStopsByLonLat(lon, lat, maxCount, maxDistance);
+			return new AgencyStopResults(agency, stopResults);
+		}
+	}
+
+	public List<AgencyStopResults> findNearestStopByAgencyIdAndLonLat(List<String> agencyIds, double lon, double lat,
+			int maxCount, double maxDistance) {
+		final List<String> ids;
+		if (agencyIds == null || agencyIds.isEmpty()) {
+			ids = this.agencies.stream().map(Agency::getId).collect(Collectors.toList());
+		} else {
+			ids = agencyIds;
+		}
+
+		return ids.stream()
+				.map(agencyId -> this.findNearestStopByAgencyIdAndLonLat(agencyId, lon, lat, maxCount, maxDistance))
+				.filter(Objects::nonNull).collect(Collectors.toList());
 	}
 }

@@ -1,7 +1,10 @@
 package org.hisrc.bahnhofdirect.controller;
 
+import java.util.List;
+
+import org.hisrc.bahnhofdirect.dataccess.AgencyStopRepository;
+import org.hisrc.bahnhofdirect.model.AgencyStopResults;
 import org.hisrc.bahnhofdirect.model.StopResult;
-import org.hisrc.bahnhofdirect.service.AgencyStopService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -14,7 +17,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 public class StopController {
 
 	@Autowired
-	private AgencyStopService agencyStopService;
+	private AgencyStopRepository agencyStopRepository;
 
 	@CrossOrigin(origins = { "*" })
 	@GetMapping(value = "/stop/{lon:.+}/{lat:.+}")
@@ -22,12 +25,25 @@ public class StopController {
 	public StopResult findByLonLat(@RequestParam(value = "agencyId", defaultValue = "db") String agencyId,
 			@PathVariable(value = "lon") double lon, @PathVariable(value = "lat") double lat)
 			throws StopNotFoundException {
-		StopResult stopResult = agencyStopService.findNearestStopByAgencyIdAndLonLat(agencyId, lon, lat);
+		StopResult stopResult = agencyStopRepository.findNearestStopByAgencyIdAndLonLat(agencyId, lon, lat);
 		if (stopResult != null) {
 			return stopResult;
 		} else {
 			throw new StopNotFoundException(lon, lat);
 		}
+	}
+
+	@CrossOrigin(origins = { "*" })
+	@GetMapping(value = "/stops")
+	@ResponseBody
+	public List<AgencyStopResults> findAgencyStopResultsByLonLat(
+			@RequestParam(value = "agencyIds", defaultValue = "db") List<String> agencyIds,
+			@RequestParam(value = "lon") double lon, @RequestParam(value = "lat") double lat,
+			@RequestParam(value = "maxCount", defaultValue = "5") int maxCount,
+			@RequestParam(value = "maxDistance", defaultValue = "10000") double maxDistance)
+			throws StopNotFoundException {
+
+		return agencyStopRepository.findNearestStopByAgencyIdAndLonLat(agencyIds, lon, lat, maxCount, maxDistance);
 	}
 
 }

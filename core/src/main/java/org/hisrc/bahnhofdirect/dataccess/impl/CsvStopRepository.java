@@ -3,6 +3,7 @@ package org.hisrc.bahnhofdirect.dataccess.impl;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -12,6 +13,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.hisrc.bahnhofdirect.dataccess.StopRepository;
+import org.hisrc.bahnhofdirect.model.AgencyStopResults;
 import org.hisrc.bahnhofdirect.model.Stop;
 import org.hisrc.bahnhofdirect.model.StopEntry;
 import org.hisrc.bahnhofdirect.model.StopResult;
@@ -64,7 +66,7 @@ public class CsvStopRepository implements StopRepository {
 	private List<StopEntry> loadStopEntries(InputStream is) throws IOException {
 		final List<StopEntry> stopEntries = new LinkedList<>();
 		final CsvMapper mapper = new CsvMapper();
-		final CsvSchema schema = mapper.schemaFor(Stop.class).withHeader();
+		final CsvSchema schema = mapper.schemaFor(Stop.class).withHeader().withQuoteChar('"');
 
 		final MappingIterator<Stop> stopsIterator = mapper.readerFor(Stop.class).with(schema)
 				.readValues(new InputStreamReader(is, "UTF-8"));
@@ -106,7 +108,7 @@ public class CsvStopRepository implements StopRepository {
 	}
 
 	@Override
-	public StopResult findByLonLat(double lon, double lat) {
+	public StopResult findNearestStopByLonLat(double lon, double lat) {
 		final AtomicInteger indexResult = new AtomicInteger(-1);
 		double[] xy = null;
 		try {
@@ -127,13 +129,40 @@ public class CsvStopRepository implements StopRepository {
 		}, Float.POSITIVE_INFINITY);
 
 		final int index = indexResult.get();
+		final StopResult stopResult = createStopResult(index, xy);
+		return stopResult;
+	}
+
+	@Override
+	public List<StopResult> findNearestStopsByLonLat(double lon, double lat, int maxCount, double maxDistance) {
+		try {
+			double[] xy = coordinateTransformer.lonLatToXY(lon, lat);
+			float x = (float) xy[0];
+			float y = (float) xy[1];
+			final List<StopResult> stopResults = new ArrayList<>();
+			stopEntrySpatialIndex.nearestN(new Point(x, y), new TIntProcedure() {
+				@Override
+				public boolean execute(int value) {
+					StopResult stopResult = createStopResult(value, xy);
+					stopResults.add(stopResult);
+					return true;
+				}
+			}, maxCount, Math.round((float) maxDistance));
+
+			return stopResults;
+		} catch (TransformException tex) {
+			LOGGER.warn("Could convert lon/lat {}{} to x/y coordinates.", lon, lat);
+			return null;
+		}
+	}
+
+	private StopResult createStopResult(final int index, double[] xy) {
 		final StopEntry stopEntry = stopEntries.get(index);
 		final double dx = xy[0] - stopEntry.getX();
 		final double dy = xy[1] - stopEntry.getY();
 		final double distance = Math.sqrt(dx * dx + dy * dy);
 		final StopResult stopResult = new StopResult(stopEntry.getStop(), distance);
 		return stopResult;
-
 	}
 
 }

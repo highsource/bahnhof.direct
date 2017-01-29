@@ -1,5 +1,7 @@
 package org.hisrc.bahnhofdirect.dataccess;
 
+import java.util.List;
+
 import org.hisrc.bahnhofdirect.model.Stop;
 import org.hisrc.bahnhofdirect.model.StopResult;
 
@@ -7,5 +9,7 @@ public interface StopRepository {
 
 	public Stop findById(String id);
 	
-	public StopResult findByLonLat(double lon, double lat);
+	public StopResult findNearestStopByLonLat(double lon, double lat);
+
+	public List<StopResult> findNearestStopsByLonLat(double lon, double lat, int maxCount, double maxDistance);
 }

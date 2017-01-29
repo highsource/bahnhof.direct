@@ -1,4 +1,5 @@
-"agency_name"
-db
-rmv
-vgn
+"agency_name","agency_departure_board_url_template"
+db,"https://iris.noncd.db.de/wbt/js/index.html?typ=cd&bhf={stop_id}"
+rmv,"https://www.rmv.de/auskunft/bin/jp/stboard.exe/dn?boardType=dep&L=vs_stb&input={stop_id}"
+vgn,"http://m.vgn.de/komfortauskunft/haltestelle/?sl=s:{stop_id}"
+vbb,"http://fahrinfo.vbb.de/bin/stboard.exe/dn?boardType=dep&L=vs_stb&input={stop_id}"
