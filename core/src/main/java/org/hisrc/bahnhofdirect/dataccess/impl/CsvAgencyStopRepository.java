@@ -13,7 +13,7 @@ import java.util.stream.Collectors;
 import org.hisrc.bahnhofdirect.dataccess.AgencyStopRepository;
 import org.hisrc.bahnhofdirect.dataccess.StopRepository;
 import org.hisrc.bahnhofdirect.model.Agency;
-import org.hisrc.bahnhofdirect.model.Stop;
+import org.hisrc.bahnhofdirect.model.StopResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -76,7 +76,7 @@ public class CsvAgencyStopRepository implements AgencyStopRepository {
 	}
 
 	@Override
-	public Stop findNearestStopByAgencyIdAndLonLat(String agencyId, double lon, double lat) {
+	public StopResult findNearestStopByAgencyIdAndLonLat(String agencyId, double lon, double lat) {
 		final Agency agency = findAgencyById(agencyId);
 		if (agency == null) {
 			return null;

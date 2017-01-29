@@ -13,6 +13,11 @@ import java.util.stream.Collectors;
 
 import org.hisrc.bahnhofdirect.dataccess.StopRepository;
 import org.hisrc.bahnhofdirect.model.Stop;
+import org.hisrc.bahnhofdirect.model.StopEntry;
+import org.hisrc.bahnhofdirect.model.StopResult;
+import org.hisrc.bahnhofdirect.service.CoordinateTransformer;
+import org.hisrc.bahnhofdirect.service.impl.CRSCoordinateTransformer;
+import org.opengis.referencing.operation.TransformException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,15 +35,16 @@ public class CsvStopRepository implements StopRepository {
 
 	private final Logger LOGGER = LoggerFactory.getLogger(CsvStopRepository.class);
 
-	private final List<Stop> stops;
-	private final Map<String, Stop> stopsById;
-	private final SpatialIndex haltestellesSpatialIndex;
+	private CoordinateTransformer coordinateTransformer = new CRSCoordinateTransformer();
+	private final List<StopEntry> stopEntries;
+	private final Map<String, StopEntry> stopEntryById;
+	private final SpatialIndex stopEntrySpatialIndex;
 
 	public CsvStopRepository(InputStream is) {
 		try {
-			this.stops = loadStops(is);
-			this.stopsById = createStopsByEvaNrMap(this.stops);
-			this.haltestellesSpatialIndex = createSpatialIndex(this.stops);
+			this.stopEntries = loadStopEntries(is);
+			this.stopEntryById = createStopEntryById(this.stopEntries);
+			this.stopEntrySpatialIndex = createSpatialIndex(this.stopEntries);
 		} catch (IOException ioex) {
 			throw new ExceptionInInitializerError(ioex);
 		} finally {
@@ -50,13 +56,13 @@ public class CsvStopRepository implements StopRepository {
 		}
 	}
 
-	private Map<String, Stop> createStopsByEvaNrMap(List<Stop> haltestelles) {
-		return Collections
-				.unmodifiableMap(haltestelles.stream().collect(Collectors.toMap(Stop::getId, Function.identity())));
+	private Map<String, StopEntry> createStopEntryById(List<StopEntry> stopEntries) {
+		return Collections.unmodifiableMap(stopEntries.stream()
+				.collect(Collectors.toMap(stopEntry -> stopEntry.getStop().getId(), Function.identity())));
 	}
 
-	private List<Stop> loadStops(InputStream is) throws IOException {
-		final List<Stop> stops = new LinkedList<>();
+	private List<StopEntry> loadStopEntries(InputStream is) throws IOException {
+		final List<StopEntry> stopEntries = new LinkedList<>();
 		final CsvMapper mapper = new CsvMapper();
 		final CsvSchema schema = mapper.schemaFor(Stop.class).withHeader();
 
@@ -65,49 +71,69 @@ public class CsvStopRepository implements StopRepository {
 		while (stopsIterator.hasNext()) {
 			try {
 				final Stop stop = stopsIterator.next();
-				stops.add(stop);
+				final double lon = stop.getLon();
+				final double lat = stop.getLat();
+				try {
+					double[] xy = coordinateTransformer.lonLatToXY(lon, lat);
+					stopEntries.add(new StopEntry(stop, xy[0], xy[1]));
+				} catch (TransformException tex) {
+					LOGGER.warn("Could convert lon/lat {}{} to x/y coordinates.", lon, lat);
+				}
 			} catch (RuntimeException rex) {
 				LOGGER.warn("Could not read stop from [{}].", stopsIterator.getCurrentLocation(), rex);
 			}
 		}
-		return Collections.unmodifiableList(stops);
+		return Collections.unmodifiableList(stopEntries);
 	}
 
-	private SpatialIndex createSpatialIndex(List<Stop> stops) {
+	private SpatialIndex createSpatialIndex(List<StopEntry> stopEntries) {
 		final SpatialIndex spatialIndex = new RTree();
 		spatialIndex.init(null);
-		for (int index = 0; index < stops.size(); index++) {
-			final Stop stop = stops.get(index);
-			float x = (float) stop.getLon();
-			float y = (float) stop.getLat();
+		for (int index = 0; index < stopEntries.size(); index++) {
+			final StopEntry stopEntry = stopEntries.get(index);
+			float x = (float) stopEntry.getX();
+			float y = (float) stopEntry.getY();
+
 			spatialIndex.add(new Rectangle(x, y, x, y), index);
 		}
 		return spatialIndex;
 	}
 
 	@Override
-	public List<Stop> findAll() {
-		return stops;
-	}
-
-	@Override
 	public Stop findById(String id) {
-		return stopsById.get(id);
+		final StopEntry stopEntry = stopEntryById.get(id);
+		return stopEntry == null ? null : stopEntry.getStop();
 	}
 
 	@Override
-	public Stop findByLonLat(double lon, double lat) {
-		final AtomicInteger result = new AtomicInteger(-1);
-		haltestellesSpatialIndex.nearest(new Point((float) lon, (float) lat), new TIntProcedure() {
+	public StopResult findByLonLat(double lon, double lat) {
+		final AtomicInteger indexResult = new AtomicInteger(-1);
+		double[] xy = null;
+		try {
+			xy = coordinateTransformer.lonLatToXY(lon, lat);
+		} catch (TransformException tex) {
+			LOGGER.warn("Could convert lon/lat {}{} to x/y coordinates.", lon, lat);
+			return null;
+		}
+		float x = (float) xy[0];
+		float y = (float) xy[1];
+		stopEntrySpatialIndex.nearest(new Point(x, y), new TIntProcedure() {
 
 			@Override
 			public boolean execute(int value) {
-				result.set(value);
+				indexResult.set(value);
 				return true;
 			}
 		}, Float.POSITIVE_INFINITY);
 
-		final int index = result.get();
-		return stops.get(index);
+		final int index = indexResult.get();
+		final StopEntry stopEntry = stopEntries.get(index);
+		final double dx = xy[0] - stopEntry.getX();
+		final double dy = xy[1] - stopEntry.getY();
+		final double distance = Math.sqrt(dx * dx + dy * dy);
+		final StopResult stopResult = new StopResult(stopEntry.getStop(), distance);
+		return stopResult;
+
 	}
+
 }

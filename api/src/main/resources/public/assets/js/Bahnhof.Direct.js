@@ -46,9 +46,9 @@ function errorReceivingCurrentPosition(err) {
   console.warn('ERROR(' + err.code + '): ' + err.message);
 };
 
-function receiveHaltestelle(stop)
+function receiveHaltestelle(stopResult)
 {
-	var url = 'https://iris.noncd.db.de/wbt/js/index.html?typ=cd&bhf=' + stop.stop_id;
+	var url = 'https://iris.noncd.db.de/wbt/js/index.html?typ=cd&bhf=' + stopResult.stop.stop_id;
 	window.location.replace(url);
 }
 

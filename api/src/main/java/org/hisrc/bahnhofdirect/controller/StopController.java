@@ -1,6 +1,6 @@
 package org.hisrc.bahnhofdirect.controller;
 
-import org.hisrc.bahnhofdirect.model.Stop;
+import org.hisrc.bahnhofdirect.model.StopResult;
 import org.hisrc.bahnhofdirect.service.AgencyStopService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -19,12 +19,12 @@ public class StopController {
 	@CrossOrigin(origins = { "*" })
 	@GetMapping(value = "/stop/{lon:.+}/{lat:.+}")
 	@ResponseBody
-	public Stop findByLonLat(@RequestParam(value = "agencyId", defaultValue = "db") String agencyId,
+	public StopResult findByLonLat(@RequestParam(value = "agencyId", defaultValue = "db") String agencyId,
 			@PathVariable(value = "lon") double lon, @PathVariable(value = "lat") double lat)
 			throws StopNotFoundException {
-		Stop stop = agencyStopService.findNearestStopByAgencyIdAndLonLat(agencyId, lon, lat);
-		if (stop != null) {
-			return stop;
+		StopResult stopResult = agencyStopService.findNearestStopByAgencyIdAndLonLat(agencyId, lon, lat);
+		if (stopResult != null) {
+			return stopResult;
 		} else {
 			throw new StopNotFoundException(lon, lat);
 		}

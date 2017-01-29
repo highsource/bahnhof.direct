@@ -14,10 +14,11 @@ public class CsvAgenciesStopRepositoryTest {
 	public void findsAgencyById() {
 		Assert.assertNotNull(agenciesStopRepository.findAgencyById("db"));
 	}
-	
+
 	@Test
 	public void findsNearestStopByAgencyIdAndLonLat() {
-		assertEquals("Seulberg", agenciesStopRepository.findNearestStopByAgencyIdAndLonLat("db", 8.657660, 50.239804).getName());
-}
+		assertEquals("Seulberg", agenciesStopRepository.findNearestStopByAgencyIdAndLonLat("db", 8.657660, 50.239804)
+				.getStop().getName());
+	}
 
 }
