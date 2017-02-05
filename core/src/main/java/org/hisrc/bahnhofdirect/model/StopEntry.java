@@ -24,4 +24,11 @@ public class StopEntry {
 	public double getY() {
 		return y;
 	}
+
+	@Override
+	public String toString() {
+		return "StopEntry [stop=" + stop + ", x=" + x + ", y=" + y + "]";
+	}
+	
+	
 }

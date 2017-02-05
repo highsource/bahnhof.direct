@@ -6,3 +6,4 @@ vbb,"http://fahrinfo.vbb.de/bin/stboard.exe/dn?start=1&L=vs_html5&boardType=dep&
 vrr,"http://pda.vrr.de/vrr_mobile/XSLT_DM_REQUEST?limit=10&mode=direct&stateless=1&type_dm=stop&useRealtime=1&itdTripDateTimeDepArr=dep&name_dm={stop_id}"
 nvv,"http://auskunft.nvv.de/auskunft/bin/jp/stboard.exe/dox/dn?L=vs_html5&boardType=dep&maxJourneys=10&start=yes&input={stop_id}"
 vvs,"http://mobile.vvs.de/jqm/controller/XSLT_DM_REQUEST?limit=20&mode=direct&stateless=1&type_dm=stop&useRealtime=1&itdTripDateTimeDepArr=dep&name_dm={stop_id}"
+nah.sh,"http://nah.sh.hafas.de/bin/stboard.exe/dox/dn?L=vs_html5&boardType=dep&maxJourneys=10&start=yes&input={stop_id}"
